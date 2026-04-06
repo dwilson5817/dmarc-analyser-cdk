@@ -1,6 +1,7 @@
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as kms from 'aws-cdk-lib/aws-kms';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -79,6 +80,11 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: 'dmarc_analyser_api.main.handler',
         code: lambda.Code.fromBucket(artifactsBucket, 'dmarc-analyser-api/function.zip'),
+      },
+      apiGatewayProps: {
+        defaultMethodOptions: {
+          authorizationType: apigw.AuthorizationType.NONE,
+        },
       },
     });
   }
