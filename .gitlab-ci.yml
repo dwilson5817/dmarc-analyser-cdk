@@ -17,7 +17,7 @@ download-lambda-artifacts:
     - mkdir -p dmarc_analyser_api
     - |
       curl --fail --location --output dmarc_analyser_api/function.zip \
-        "${CI_API_V4_URL}/projects/dmarc-analyser%api/jobs/artifacts/main/download?job=build"
+        "${CI_API_V4_URL}/projects/dmarc-analyser%2Fapi/jobs/artifacts/main/download?job=build"
   artifacts:
     paths:
       - email_scrape_cron/function.zip
