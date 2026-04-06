@@ -5,6 +5,7 @@ import * as events from 'aws-cdk-lib/aws-events';
 import * as kms from 'aws-cdk-lib/aws-kms';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import { ApiGatewayToLambda } from '@aws-solutions-constructs/aws-apigateway-lambda';
 import { EventbridgeToLambda } from '@aws-solutions-constructs/aws-eventbridge-lambda';
 import { Construct } from 'constructs';
@@ -32,7 +33,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    new s3.Bucket(this, 'RawReportsBucket', {
+    const rawReportsBucket = new s3.Bucket(this, 'RawReportsBucket', {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
     });
@@ -41,12 +42,23 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: 'index.handler',
-        code: lambda.Code.fromInline('def handler(event, context):\n    pass\n'),
+        code: lambda.Code.fromAsset('email_scrape_cron/function.zip'),
       },
       eventRuleProps: {
         schedule: events.Schedule.rate(cdk.Duration.hours(1)),
       },
     });
+
+    const s3PutHandlerFn = new lambda.Function(this, 'S3PutHandlerLambda', {
+      runtime: lambda.Runtime.PYTHON_3_13,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('s3_put_handler/function.zip'),
+    });
+
+    rawReportsBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new s3n.LambdaDestination(s3PutHandlerFn),
+    );
 
     new ApiGatewayToLambda(this, 'ApiLambda', {
       lambdaFunctionProps: {
