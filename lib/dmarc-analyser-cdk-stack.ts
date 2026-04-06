@@ -56,7 +56,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: 'index.handler',
-        code: lambda.Code.fromAsset('email_scrape_cron/function.zip'),
+        code: lambda.Code.fromBucket(artifactsBucket, 'dmarc-analyser-cron/email_scrape_cron/function.zip'),
       },
       eventRuleProps: {
         schedule: events.Schedule.rate(cdk.Duration.hours(1)),
@@ -66,7 +66,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
     const s3PutHandlerFn = new lambda.Function(this, 'S3PutHandlerLambda', {
       runtime: lambda.Runtime.PYTHON_3_13,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('s3_put_handler/function.zip'),
+      code: lambda.Code.fromBucket(artifactsBucket, 'dmarc-analyser-cron/s3_put_handler/function.zip'),
     });
 
     rawReportsBucket.addEventNotification(
@@ -78,7 +78,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: 'dmarc_analyser_api.main.handler',
-        code: lambda.Code.fromAsset('dmarc_analyser_api/function.zip'),
+        code: lambda.Code.fromBucket(artifactsBucket, 'dmarc-analyser-api/function.zip'),
       },
     });
   }
