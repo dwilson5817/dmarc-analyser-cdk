@@ -33,6 +33,20 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    const artifactsBucket = new s3.Bucket(this, 'ArtifactsBucket', {
+      versioned: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      lifecycleRules: [{
+        noncurrentVersionExpiration: cdk.Duration.days(1),
+        noncurrentVersionsToRetain: 5,
+      }],
+    });
+
+    new cdk.CfnOutput(this, 'ArtifactsBucketName', {
+      value: artifactsBucket.bucketName,
+    });
+
     const rawReportsBucket = new s3.Bucket(this, 'RawReportsBucket', {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
