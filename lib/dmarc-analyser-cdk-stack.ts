@@ -63,8 +63,8 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
     new ApiGatewayToLambda(this, 'ApiLambda', {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
-        handler: 'index.handler',
-        code: lambda.Code.fromInline('def handler(event, context):\n    return {"statusCode": 200, "body": "ok"}\n'),
+        handler: 'dmarc_analyser_api.main.handler',
+        code: lambda.Code.fromAsset('dmarc_analyser_api/function.zip'),
       },
     });
   }
