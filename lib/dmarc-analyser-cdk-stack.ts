@@ -3,6 +3,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as events from 'aws-cdk-lib/aws-events';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as kms from 'aws-cdk-lib/aws-kms';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3';
@@ -57,7 +58,11 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: 'index.handler',
-        code: lambda.Code.fromBucket(artifactsBucket, 'dmarc-analyser-cron/email_scrape_cron/function.zip'),
+        code: lambda.Code.fromBucket(
+          artifactsBucket,
+          'dmarc-analyser-cron/email_scrape_cron/function.zip',
+          ssm.StringParameter.valueForStringParameter(this, '/dmarc-analyser/artifacts/cron/email_scrape_cron/version'),
+        ),
       },
       eventRuleProps: {
         schedule: events.Schedule.rate(cdk.Duration.hours(1)),
@@ -67,7 +72,11 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
     const s3PutHandlerFn = new lambda.Function(this, 'S3PutHandlerLambda', {
       runtime: lambda.Runtime.PYTHON_3_13,
       handler: 'index.handler',
-      code: lambda.Code.fromBucket(artifactsBucket, 'dmarc-analyser-cron/s3_put_handler/function.zip'),
+      code: lambda.Code.fromBucket(
+        artifactsBucket,
+        'dmarc-analyser-cron/s3_put_handler/function.zip',
+        ssm.StringParameter.valueForStringParameter(this, '/dmarc-analyser/artifacts/cron/s3_put_handler/version'),
+      ),
     });
 
     rawReportsBucket.addEventNotification(
@@ -79,7 +88,11 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: 'dmarc_analyser_api.main.handler',
-        code: lambda.Code.fromBucket(artifactsBucket, 'dmarc-analyser-api/function.zip'),
+        code: lambda.Code.fromBucket(
+          artifactsBucket,
+          'dmarc-analyser-api/function.zip',
+          ssm.StringParameter.valueForStringParameter(this, '/dmarc-analyser/artifacts/api/version'),
+        ),
       },
       apiGatewayProps: {
         defaultMethodOptions: {
