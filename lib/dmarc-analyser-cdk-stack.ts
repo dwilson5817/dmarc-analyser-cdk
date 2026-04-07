@@ -64,7 +64,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
-    new EventbridgeToLambda(this, 'CronLambda', {
+    const eventbridgeToLambda = new EventbridgeToLambda(this, 'CronLambda', {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: 'main.handler',
@@ -85,6 +85,8 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
         schedule: events.Schedule.rate(cdk.Duration.hours(1)),
       },
     });
+
+    rawReportsBucket.grantReadWrite(eventbridgeToLambda.lambdaFunction)
 
     const s3PutHandlerFn = new lambda.Function(this, 'S3PutHandlerLambda', {
       runtime: lambda.Runtime.PYTHON_3_13,
