@@ -73,6 +73,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
           'dmarc-analyser-cron/email_scrape_cron/function.zip',
           ssm.StringParameter.valueForStringParameter(this, '/dmarc-analyser/artifacts/cron/email_scrape_cron/version'),
         ),
+        timeout: cdk.Duration.minutes(1),
         environment: {
           S3_BUCKET: rawReportsBucket.bucketName,
           VAULT_ADDR: process.env.VAULT_ADDR ?? (() => { throw new Error('VAULT_ADDR must be set'); })(),
