@@ -67,7 +67,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
     new EventbridgeToLambda(this, 'CronLambda', {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
-        handler: 'index.handler',
+        handler: 'main.handler',
         code: lambda.Code.fromBucket(
           artifactsBucket,
           'dmarc-analyser-cron/email_scrape_cron/function.zip',
@@ -87,7 +87,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
 
     const s3PutHandlerFn = new lambda.Function(this, 'S3PutHandlerLambda', {
       runtime: lambda.Runtime.PYTHON_3_13,
-      handler: 'index.handler',
+      handler: 'main.handler',
       code: lambda.Code.fromBucket(
         artifactsBucket,
         'dmarc-analyser-cron/s3_put_handler/function.zip',
