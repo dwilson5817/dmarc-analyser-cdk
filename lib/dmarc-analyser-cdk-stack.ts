@@ -11,6 +11,7 @@ import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import { ApiGatewayToLambda } from '@aws-solutions-constructs/aws-apigateway-lambda';
 import { EventbridgeToLambda } from '@aws-solutions-constructs/aws-eventbridge-lambda';
 import { Construct } from 'constructs';
+import { GitLabAuthorizer } from './gitlab-authorizer';
 
 export class DmarcAnalyserCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -84,6 +85,11 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       new s3n.LambdaDestination(s3PutHandlerFn),
     );
 
+    const gitlabUrl = process.env.CI_SERVER_URL ?? process.env.GITLAB_URL;
+    if (!gitlabUrl) throw new Error('CI_SERVER_URL (or GITLAB_URL) must be set');
+
+    const { authorizer } = new GitLabAuthorizer(this, 'GitLabAuthorizer', { gitlabUrl });
+
     new ApiGatewayToLambda(this, 'ApiLambda', {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
@@ -96,7 +102,8 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       },
       apiGatewayProps: {
         defaultMethodOptions: {
-          authorizationType: apigw.AuthorizationType.NONE,
+          authorizationType: apigw.AuthorizationType.CUSTOM,
+          authorizer,
         },
       },
     });
