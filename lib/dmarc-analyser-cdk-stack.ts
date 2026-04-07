@@ -4,7 +4,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
-import * as kms from 'aws-cdk-lib/aws-kms';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
@@ -18,16 +18,25 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
     super(scope, id, props);
 
     const domainName = process.env.DOMAIN_NAME ?? 'api.dmarc.dylanw.dev';
+    const vaultServerAccountId = '197315783321';
 
     new acm.Certificate(this, 'ApiCertificate', {
       domainName,
       validation: acm.CertificateValidation.fromDns(),
     });
 
-    new kms.Key(this, 'EmailCredentialsKey', {
-      description: 'Key for encrypting email account credentials',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    const verificationRole = new iam.Role(this, 'VaultVerificationRole', {
+      assumedBy: new iam.AccountPrincipal(vaultServerAccountId),
     });
+
+    verificationRole.addToPolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        'iam:GetRole',
+        'iam:GetUser',
+      ],
+      resources: ['*'],
+    }));
 
     new dynamodb.Table(this, 'ReportsTable', {
       partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
