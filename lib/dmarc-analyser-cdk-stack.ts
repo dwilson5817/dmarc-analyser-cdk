@@ -38,7 +38,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       resources: ['*'],
     }));
 
-    new dynamodb.Table(this, 'ReportsTable', {
+    const reportsTable = new dynamodb.Table(this, 'ReportsTable', {
       partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -96,7 +96,13 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
         'dmarc-analyser-cron/s3_put_handler/function.zip',
         ssm.StringParameter.valueForStringParameter(this, '/dmarc-analyser/artifacts/cron/s3_put_handler/version'),
       ),
+      environment: {
+        DYNAMODB_TABLE: reportsTable.tableName,
+      },
     });
+
+    rawReportsBucket.grantRead(s3PutHandlerFn);
+    reportsTable.grantWriteData(s3PutHandlerFn);
 
     rawReportsBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
