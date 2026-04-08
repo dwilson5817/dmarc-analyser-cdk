@@ -50,11 +50,12 @@ def handler(event, context):
     except Exception:
         principal = 'unauthorized'
         effect = 'Deny'
+        wildcard_arn = arn
     return {
         'principalId': principal,
         'policyDocument': {
             'Version': '2012-10-17',
-            'Statement': [{'Action': 'execute-api:Invoke', 'Effect': effect, 'Resource': arn}]
+            'Statement': [{'Action': 'execute-api:Invoke', 'Effect': effect, 'Resource': wildcard_arn}]
         },
         'context': {
             'Access-Control-Allow-Origin': '*',
