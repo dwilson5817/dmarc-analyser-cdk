@@ -129,6 +129,11 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
           authorizationType: apigw.AuthorizationType.CUSTOM,
           authorizer,
         },
+        defaultCorsPreflightOptions: {
+          allowOrigins: apigw.Cors.ALL_ORIGINS,
+          allowMethods: apigw.Cors.ALL_METHODS,
+          allowHeaders: ['Authorization', 'Content-Type'],
+        },
       },
     });
   }
