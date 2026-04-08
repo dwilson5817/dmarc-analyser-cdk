@@ -46,6 +46,10 @@ def handler(event, context):
         'policyDocument': {
             'Version': '2012-10-17',
             'Statement': [{'Action': 'execute-api:Invoke', 'Effect': effect, 'Resource': arn}]
+        },
+        'context': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Authorization,Content-Type',
         }
     }
 `),
