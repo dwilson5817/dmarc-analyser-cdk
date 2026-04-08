@@ -123,6 +123,9 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
           'dmarc-analyser-api/function.zip',
           ssm.StringParameter.valueForStringParameter(this, '/dmarc-analyser/artifacts/api/version'),
         ),
+        environment: {
+          DYNAMODB_TABLE: reportsTable.tableName,
+        },
       },
       apiGatewayProps: {
         defaultMethodOptions: {
