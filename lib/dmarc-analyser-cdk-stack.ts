@@ -114,7 +114,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
 
     const { authorizer } = new GitLabAuthorizer(this, 'GitLabAuthorizer', { gitlabUrl });
 
-    new ApiGatewayToLambda(this, 'ApiLambda', {
+    const api = new ApiGatewayToLambda(this, 'ApiLambda', {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: 'dmarc_analyser_api.main.handler',
@@ -136,5 +136,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
         },
       },
     });
+
+    reportsTable.grantReadData(api.lambdaFunction);
   }
 }
