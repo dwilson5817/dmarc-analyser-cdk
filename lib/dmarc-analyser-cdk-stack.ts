@@ -3,6 +3,8 @@ import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as events from 'aws-cdk-lib/aws-events';
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -17,12 +19,31 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const domainName = process.env.DOMAIN_NAME ?? 'api.dmarc.dylanw.dev';
+    const domainName = process.env.DOMAIN_NAME ?? 'api.dmarc.dylanw.net';
     const vaultServerAccountId = '197315783321';
 
-    new acm.Certificate(this, 'ApiCertificate', {
+    const hostedZone = new route53.HostedZone(this, 'HostedZone', {
+      zoneName: 'dmarc.dylanw.net',
+    });
+
+    new route53.CaaRecord(this, 'AcmCaaRecord', {
+      zone: hostedZone,
+      values: [
+        { flag: 0, tag: route53.CaaTag.ISSUE, value: 'amazon.com' },
+        { flag: 0, tag: route53.CaaTag.ISSUE, value: 'amazontrust.com' },
+        { flag: 0, tag: route53.CaaTag.ISSUE, value: 'awstrust.com' },
+        { flag: 0, tag: route53.CaaTag.ISSUE, value: 'amazonaws.com' },
+      ],
+    });
+
+    new cdk.CfnOutput(this, 'HostedZoneNameServers', {
+      description: 'NS records to add to dylanw.net to delegate dmarc.dylanw.net to Route 53',
+      value: cdk.Fn.join(', ', hostedZone.hostedZoneNameServers!),
+    });
+
+    const certificate = new acm.Certificate(this, 'ApiCertificate', {
       domainName,
-      validation: acm.CertificateValidation.fromDns(),
+      validation: acm.CertificateValidation.fromDns(hostedZone),
     });
 
     const verificationRole = new iam.Role(this, 'VaultVerificationRole', {
@@ -64,7 +85,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
-    const eventbridgeToLambda = new EventbridgeToLambda(this, 'CronLambda', {
+    const eventbridgeToLambda = new EventbridgeToLambda(this, 'Cron', {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: 'main.handler',
@@ -114,7 +135,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
 
     const { authorizer } = new GitLabAuthorizer(this, 'GitLabAuthorizer', { gitlabUrl });
 
-    const api = new ApiGatewayToLambda(this, 'ApiLambda', {
+    const api = new ApiGatewayToLambda(this, 'Api', {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
         handler: 'dmarc_analyser_api.main.handler',
@@ -141,5 +162,33 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
     });
 
     reportsTable.grantReadData(api.lambdaFunction);
+
+    const customDomain = new apigw.DomainName(this, 'ApiDomainName', {
+      domainName,
+      certificate,
+      endpointType: apigw.EndpointType.REGIONAL,
+    });
+
+    customDomain.addBasePathMapping(api.apiGateway);
+
+    new route53.ARecord(this, 'ApiAliasRecord', {
+      zone: hostedZone,
+      recordName: 'api',
+      target: route53.RecordTarget.fromAlias(
+        new route53Targets.ApiGatewayDomain(customDomain),
+      ),
+    });
+
+    // Route 53 does not support ALIAS to external hostnames, so we use A/AAAA
+    // records pointing to the GitLab Pages server (dmarc-analyser.pages.dylanw.dev).
+    new route53.ARecord(this, 'FrontendARecord', {
+      zone: hostedZone,
+      target: route53.RecordTarget.fromIpAddresses('51.38.73.143'),
+    });
+
+    new route53.AaaaRecord(this, 'FrontendAaaaRecord', {
+      zone: hostedZone,
+      target: route53.RecordTarget.fromIpAddresses('2001:41d0:800:3f6d:d23b:35f2:84ea:9e58'),
+    });
   }
 }
