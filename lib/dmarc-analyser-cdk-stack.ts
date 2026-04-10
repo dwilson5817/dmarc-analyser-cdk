@@ -138,11 +138,11 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
     const api = new ApiGatewayToLambda(this, 'Api', {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
-        handler: 'dmarc_analyser_api.main.handler',
+        handler: 'api_handler.main.handler',
         code: lambda.Code.fromBucket(
           artifactsBucket,
-          'dmarc-analyser-api/function.zip',
-          ssm.StringParameter.valueForStringParameter(this, '/dmarc-analyser/artifacts/api/version'),
+          'dmarc-analyser-api/api_handler/function.zip',
+          ssm.StringParameter.valueForStringParameter(this, '/dmarc-analyser/artifacts/api/api_handler/version'),
         ),
         environment: {
           DYNAMODB_TABLE: reportsTable.tableName,
