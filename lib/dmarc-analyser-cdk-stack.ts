@@ -138,7 +138,7 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
     const api = new ApiGatewayToLambda(this, 'Api', {
       lambdaFunctionProps: {
         runtime: lambda.Runtime.PYTHON_3_13,
-        handler: 'api_handler.main.handler',
+        handler: 'main.handler',
         code: lambda.Code.fromBucket(
           artifactsBucket,
           'dmarc-analyser-api/api_handler/function.zip',
