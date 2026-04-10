@@ -13,7 +13,6 @@ import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import { ApiGatewayToLambda } from '@aws-solutions-constructs/aws-apigateway-lambda';
 import { EventbridgeToLambda } from '@aws-solutions-constructs/aws-eventbridge-lambda';
 import { Construct } from 'constructs';
-import { GitLabAuthorizer } from './gitlab-authorizer';
 
 export class DmarcAnalyserCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -133,7 +132,23 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
     const gitlabUrl = process.env.CI_SERVER_URL ?? process.env.GITLAB_URL;
     if (!gitlabUrl) throw new Error('CI_SERVER_URL (or GITLAB_URL) must be set');
 
-    const { authorizer } = new GitLabAuthorizer(this, 'GitLabAuthorizer', { gitlabUrl });
+    const fn = new lambda.Function(this, 'GitLabAuthorizerLambdaFunction', {
+      runtime: lambda.Runtime.PYTHON_3_13,
+      handler: 'main.handler',
+      code: lambda.Code.fromBucket(
+          artifactsBucket,
+          'dmarc-analyser-api/gitlab_authorizer/function.zip',
+          ssm.StringParameter.valueForStringParameter(this, '/dmarc-analyser/artifacts/api/gitlab_authorizer/version'),
+      ),
+      environment: {
+        GITLAB_URL: gitlabUrl,
+      },
+    });
+
+    const authorizer = new apigw.TokenAuthorizer(this, 'GitLabAuthorizer', {
+      handler: fn,
+      resultsCacheTtl: cdk.Duration.minutes(5),
+    });
 
     const api = new ApiGatewayToLambda(this, 'Api', {
       lambdaFunctionProps: {
