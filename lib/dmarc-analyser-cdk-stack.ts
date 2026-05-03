@@ -129,23 +129,23 @@ export class DmarcAnalyserCdkStack extends cdk.Stack {
       new s3n.LambdaDestination(s3PutHandlerFn),
     );
 
-    const gitlabUrl = process.env.CI_SERVER_URL ?? process.env.GITLAB_URL;
-    if (!gitlabUrl) throw new Error('CI_SERVER_URL (or GITLAB_URL) must be set');
+    const userinfoUrl = process.env.USERINFO_URL;
+    if (!userinfoUrl) throw new Error('USERINFO_URL must be set');
 
-    const fn = new lambda.Function(this, 'GitLabAuthorizerLambdaFunction', {
+    const fn = new lambda.Function(this, 'ApiAuthorizerLambdaFunction', {
       runtime: lambda.Runtime.PYTHON_3_13,
       handler: 'main.handler',
       code: lambda.Code.fromBucket(
           artifactsBucket,
-          'dmarc-analyser-api/gitlab_authorizer/function.zip',
-          ssm.StringParameter.valueForStringParameter(this, '/dmarc-analyser/artifacts/api/gitlab_authorizer/version'),
+          'dmarc-analyser-api/api_authorizer/function.zip',
+          ssm.StringParameter.valueForStringParameter(this, '/dmarc-analyser/artifacts/api/api_authorizer/version'),
       ),
       environment: {
-        GITLAB_URL: gitlabUrl,
+        USERINFO_URL: userinfoUrl,
       },
     });
 
-    const authorizer = new apigw.TokenAuthorizer(this, 'GitLabAuthorizer', {
+    const authorizer = new apigw.TokenAuthorizer(this, 'ApiAuthorizer', {
       handler: fn,
       resultsCacheTtl: cdk.Duration.minutes(5),
     });

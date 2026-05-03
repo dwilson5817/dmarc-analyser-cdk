@@ -12,10 +12,10 @@ buckets, and Route 53 records for `dmarc.dylanw.net`.
 
 The following environment variables are required:
 
-| Variable      | Description                                                      |
-|---------------|------------------------------------------------------------------|
-| `GITLAB_URL`  | The base URL of GitLab, used by the Lambda authorizer            |
-| `DOMAIN_NAME` | The custom domain for the API (default: `api.dmarc.dylanw.net`) |
+| Variable        | Description                                                          |
+|-----------------|----------------------------------------------------------------------|
+| `USERINFO_URL`  | The OIDC userinfo endpoint URL, used by the Lambda authorizer        |
+| `DOMAIN_NAME`   | The custom domain for the API (default: `api.dmarc.dylanw.net`)     |
 
 Install the dependencies:
 
